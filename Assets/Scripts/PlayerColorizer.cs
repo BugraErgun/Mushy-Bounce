@@ -1,38 +1,34 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
 using Unity.Netcode;
+using UnityEngine;
 
 public class PlayerColorizer : NetworkBehaviour
 {
     [Header("Elements")]
-    [SerializeField] private SpriteRenderer[] spriteRenderers;
+    [SerializeField] private SpriteRenderer[] renderers;
 
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
+
         if (!IsServer && IsOwner)
         {
-            ColorizeServerRpc(Color.red);
+            ColorizeServerRPC(Color.red);
         }
     }
-    private void Start()
-    {
 
-    }
-    private void Update()
-    {
-
-    }
     [ServerRpc]
-    private void ColorizeServerRpc(Color color)
+    private void ColorizeServerRPC(Color color)
     {
-        ColorizeClientRpc(color);       
+        ColorizeClientRPC(color);
     }
+
     [ClientRpc]
-    private void ColorizeClientRpc(Color color)
+    private void ColorizeClientRPC(Color color)
     {
-        foreach (SpriteRenderer renderer in spriteRenderers)
+        foreach (SpriteRenderer renderer in renderers)
         {
             renderer.color = color;
         }

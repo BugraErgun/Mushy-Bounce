@@ -1,40 +1,60 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-using Unity.Netcode;
-using UnityEngine.UI;
+using System;
 using TMPro;
-using System.Drawing;
+using Unity.Netcode;
+using UnityEngine;
 
 public class ScoreManager : NetworkBehaviour
 {
-
-    [Header("Elements")]
     [SerializeField] private TextMeshProUGUI scoreText;
-    private int hostScore;
-    private int clientScore;
+
+    [SerializeField] private int hostScore;
+    [SerializeField] private int clientScore;
+    public override void OnNetworkSpawn()
+    {
+        base.OnNetworkSpawn();
+
+        NetworkManager.OnServerStarted += NetworkManager_OnServerStarted;
+    }
+
+    private void NetworkManager_OnServerStarted()
+    {
+        if (!IsServer)
+            return;
+
+        Egg.onFellInWater += Egg_FellInWater;
+
+        GameManager.onGameStateChanged += GameManager_OnGameStateChanged;
+    }
+
+    private void GameManager_OnGameStateChanged(GameManager.State state)
+    {
+        switch (state)
+        {
+      
+            case GameManager.State.Game:
+                ResetScore();
+                break;
+         
+        }
+    }
+
+    private void ResetScore()
+    {
+        hostScore = 0;
+        clientScore = 0;
+
+        UpdateScoreClientRPC(hostScore,clientScore);
+        UpdateScoreText();
+    }
 
     private void Start()
     {
         UpdateScoreText();
     }
-    public override void OnNetworkSpawn()
+
+    private void Egg_FellInWater()
     {
-        base.OnNetworkSpawn();
-        NetworkManager.OnServerStarted += NetworkManager_OnServerStarted;
-    }
-    private void NetworkManager_OnServerStarted()
-    {
-        if (!IsServer)
-        {
-            return;
-        }
-        Egg.onFellInWater += EggOnFellInWaterCallBack;
-        GameManager.onGameStateChanged += GameStateChangedCallBack;
-    }
-    private void EggOnFellInWaterCallBack()
-    {
-        if (PlayerSelecter.Instance.GetIsHostTurn())
+        if (PlayerSelector.Instance.IsHostTurn())
         {
             clientScore++;
         }
@@ -47,54 +67,14 @@ public class ScoreManager : NetworkBehaviour
 
         CheckForEndGame();
     }
-    
-    public override void OnDestroy()
-    {
-        base.OnDestroy();
-        NetworkManager.OnServerStarted -= NetworkManager_OnServerStarted;
-        Egg.onFellInWater -= EggOnFellInWaterCallBack;
-        GameManager.onGameStateChanged -= GameStateChangedCallBack;
-    }
-    [ClientRpc]
-    private void UpdateScoreClientRPC(int hostScore, int clientScore)
-    {
-        this.hostScore = hostScore;
-        this.clientScore = clientScore;
-    }
-    private void UpdateScoreText()
-    {
-        UpdateScoreTextClientRPC();
-    }
 
-    [ClientRpc]
-    private void UpdateScoreTextClientRPC()
-    {
-        scoreText.text = "<color=#00A7FF>" + hostScore + "</color>" + "-" + "<color=#FF2E00>" + clientScore + "</color>";
-    }
-    private void GameStateChangedCallBack(GameManager.State state)
-    {
-        switch (state)
-        {
-            case GameManager.State.Game:
-                ResetScores();
-                break;
-        }
-    }
-    private void ResetScores()
-    {
-        hostScore = 0;
-        clientScore = 0;
-        UpdateScoreClientRPC(hostScore, clientScore);
-        UpdateScoreText();
-
-    }
     private void CheckForEndGame()
     {
         if (hostScore >= 3)
         {
             HostWin();
         }
-        else if(clientScore >=3)
+        else if (clientScore >= 3)
         {
             ClientWin();
         }
@@ -103,15 +83,28 @@ public class ScoreManager : NetworkBehaviour
             ReuseEgg();
         }
     }
-    private void ReuseEgg()
+
+    private void ClientWin()
     {
-        EggManager.instance.ReuseEgg();
+        ClientWinClientRPC();
     }
+    [ClientRpc]
+    private void ClientWinClientRPC()
+    {
+        if (IsServer)
+        {
+            GameManager.Instance.SetGameState(GameManager.State.Lose);
+        }
+        else
+        {
+            GameManager.Instance.SetGameState(GameManager.State.Win);
+        }
+    }
+
     private void HostWin()
     {
         HostWinClientRPC();
     }
-
     [ClientRpc]
     private void HostWinClientRPC()
     {
@@ -125,21 +118,35 @@ public class ScoreManager : NetworkBehaviour
         }
     }
 
-    private void ClientWin()
+    private void ReuseEgg()
     {
-        ClientWinClientRPC();
+        EggManager.instance.ReuseEgg();
     }
 
     [ClientRpc]
-    private void ClientWinClientRPC()
+    private void UpdateScoreClientRPC(int hostScore,int clientScore)
     {
-        if (IsServer)
-        {
-            GameManager.Instance.SetGameState(GameManager.State.Lose);
-        }
-        else
-        {
-            GameManager.Instance.SetGameState(GameManager.State.Win);
-        }
+        this.hostScore = hostScore;
+        this.clientScore = clientScore;
+    }
+
+    private void UpdateScoreText()
+    {
+        UpdateScoreTextClientRPC();
+
+    }
+
+    [ClientRpc]
+    private void UpdateScoreTextClientRPC()
+    {
+        scoreText.text = "<color=#0088FF>" + hostScore + "</color> - <color=#CF2A2A>" + clientScore + "</color>";
+
+    }
+
+    public override void OnDestroy()
+    {
+        NetworkManager.OnServerStarted -= NetworkManager_OnServerStarted;
+        Egg.onFellInWater -= Egg_FellInWater;
+        GameManager.onGameStateChanged -= GameManager_OnGameStateChanged;
     }
 }

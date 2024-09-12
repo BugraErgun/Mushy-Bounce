@@ -1,8 +1,9 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
 using Unity.Netcode;
-using System;
+using Unity.VisualScripting;
+using UnityEngine;
 
 public class PlayerController : NetworkBehaviour
 {
@@ -10,35 +11,28 @@ public class PlayerController : NetworkBehaviour
     [SerializeField] private float moveSpeed;
     [SerializeField] private float maxX;
 
-    private float clickedScreenX; 
-    private float clickedPlayerX;
-
-    [Header("Animations")]
     [SerializeField] private Animator animator;
     [SerializeField] private Animator bodyAnimator;
     [SerializeField] private float animatorSpeedMultiplier;
     [SerializeField] private float animatorSpeedLerp;
 
-    [Header("Events")]
     public static Action onBump;
 
-    void Start()
+    private float clickedScreenX;
+    private float clickedPlayerX;
+
+
+    private void Start()
     {
         if (IsOwner)
-        {
             animator.Play("Idle");
-        }
-        
+    }
+    private void Update()
+    {
+        if (IsOwner)
+            ManageControl();
     }
 
-    void Update()
-    {
-        if (IsOwner)
-        {
-            ManageControl();
-        }
-        
-    }
     private void ManageControl()
     {
         if (Input.GetMouseButtonDown(0))
@@ -47,46 +41,51 @@ public class PlayerController : NetworkBehaviour
             clickedPlayerX = transform.position.x;
 
             animator.speed = 1;
+
         }
-        else if(Input.GetMouseButton(0))
+        else if (Input.GetMouseButton(0))
         {
-            float xDiffrence = Input.mousePosition.x - clickedScreenX;
-            xDiffrence /= Screen.width;
-            xDiffrence *= moveSpeed;
+            float xDifference = Input.mousePosition.x - clickedScreenX;
+            xDifference /= Screen.width;
+            xDifference *= moveSpeed;
 
-            float newXposition = clickedPlayerX + xDiffrence;
+            float newXpos = clickedPlayerX + xDifference;
 
-            newXposition = Mathf.Clamp(newXposition, -maxX, maxX); 
+            newXpos = Math.Clamp(newXpos, -maxX, maxX);
 
-            transform.position = new Vector2(newXposition, transform.position.y);
+            transform.position = new Vector2(newXpos, transform.position.y);
+            UpdateAnimation();
 
-            UpdatePlayerAnimation();
+            Debug.Log("x difference" + xDifference);
         }
-        else if(Input.GetMouseButtonUp(0))
+        else if (Input.GetMouseButtonUp(0))
         {
             animator.speed = 1;
             animator.Play("Idle");
         }
     }
-    private float previusScreenX;
 
-    private void UpdatePlayerAnimation()
+    private float previousScreenX;
+   
+    private void UpdateAnimation()
     {
-        float xDiffrence = (Input.mousePosition.x - previusScreenX) / Screen.width;
+        float xDiff = (Input.mousePosition.x - previousScreenX) / Screen.width;
+        xDiff *= animatorSpeedMultiplier;
 
-        xDiffrence *= animatorSpeedMultiplier;
-        xDiffrence = Mathf.Abs(xDiffrence);
+        xDiff = Math.Abs(xDiff);
 
-        float targetAnimatorSpeed = Mathf.Lerp(animator.speed, xDiffrence, Time.deltaTime * animatorSpeedLerp);
+        float targetAnimatorSpeed = Mathf.Lerp(animator.speed, xDiff, Time.deltaTime * animatorSpeedLerp);
 
         animator.speed = targetAnimatorSpeed;
         animator.Play("Run");
+        
 
-        previusScreenX = Input.mousePosition.x;
+        previousScreenX = Input.mousePosition.x;
     }
+
     public void Bump()
     {
-        BumpClientRPC();
+        BumpClientRPC();   
     }
 
     [ClientRpc]
@@ -95,6 +94,4 @@ public class PlayerController : NetworkBehaviour
         bodyAnimator.Play("Bump");
         onBump?.Invoke();
     }
-    
 }
-    

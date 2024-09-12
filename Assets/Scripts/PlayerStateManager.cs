@@ -1,13 +1,10 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
 using Unity.Netcode;
+using UnityEngine;
+
 public class PlayerStateManager : NetworkBehaviour
 {
-    [Header("Elements")]
     [SerializeField] private SpriteRenderer[] spriteRenderers;
     [SerializeField] private Collider2D coll;
-
     public void Enable()
     {
         EnableClientRPC();
@@ -17,12 +14,12 @@ public class PlayerStateManager : NetworkBehaviour
     private void EnableClientRPC()
     {
         coll.enabled = true;
+
         foreach (SpriteRenderer renderer in spriteRenderers)
         {
             Color color = renderer.color;
             color.a = 1f;
             renderer.color = color;
-
         }
     }
     public void Disable()
@@ -33,13 +30,14 @@ public class PlayerStateManager : NetworkBehaviour
     [ClientRpc]
     private void DisableClientRPC()
     {
-        coll    .enabled = false;
+        coll.enabled = false;   
+
         foreach (SpriteRenderer renderer in spriteRenderers)
         {
             Color color = renderer.color;
-            color.a = .2f;
+            color.a = 0.2f;
             renderer.color = color;
-
         }
+
     }
 }

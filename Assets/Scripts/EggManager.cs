@@ -8,34 +8,32 @@ public class EggManager : NetworkBehaviour
 {
     public static EggManager instance;
 
-    [Header("Elements")]
     [SerializeField] private Egg eggPrefab;
+
 
     private void Awake()
     {
         if (instance == null)
-        {
             instance = this;
-        }
         else
         {
             Destroy(gameObject);
         }
     }
-    void Start()
+    private void Start()
     {
         GameManager.onGameStateChanged += GameStateChangedCallBack;
     }
 
+
+
     public override void OnDestroy()
     {
         base.OnDestroy();
+
         GameManager.onGameStateChanged -= GameStateChangedCallBack;
     }
-    void Update()
-    {
-        
-    }
+
     private void GameStateChangedCallBack(GameManager.State state)
     {
         switch (state)
@@ -45,27 +43,31 @@ public class EggManager : NetworkBehaviour
                 break;
         }
     }
+
     private void SpawnEgg()
     {
         if (!IsServer)
         {
             return;
         }
-        Egg eggInstance = Instantiate(eggPrefab, Vector2.up * 5, Quaternion.identity);
+
+        Egg eggInstance = Instantiate(eggPrefab, Vector2.up * 5, Quaternion.identity, transform);
         eggInstance.GetComponent<NetworkObject>().Spawn();
-        eggInstance.transform.SetParent(transform);
+        eggInstance.transform.SetParent(transform); 
     }
+
     public void ReuseEgg()
     {
         if (!IsServer)
         {
             return;
         }
-        if (transform.childCount<=0)
+
+        if (transform.childCount <= 0)
         {
             return;
         }
-        Egg egg = transform.GetChild(0).GetComponent<Egg>();
-        egg.Reuse();
+
+        transform.GetChild(0).GetComponent<Egg>().Reuse();
     }
 }

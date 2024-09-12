@@ -1,14 +1,12 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-using Unity.Netcode;
-using Unity.VisualScripting;
 using System;
+using Unity.Netcode;
+using UnityEngine;
 
 public class GameManager : NetworkBehaviour
 {
     public static GameManager Instance;
 
+    public static Action<State> onGameStateChanged;
     public enum State
     {
         Menu,
@@ -16,16 +14,14 @@ public class GameManager : NetworkBehaviour
         Win,
         Lose
     }
+
     private State gameState;
 
-    private int connectedPlayers;
-
-    [Header("Evenets")]
-    public static Action<State> onGameStateChanged;
+    public int connectedPlayers = 0;
 
     private void Awake()
     {
-        if (Instance==null)
+        if (Instance == null)
         {
             Instance = this;
         }
@@ -37,16 +33,20 @@ public class GameManager : NetworkBehaviour
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
+
         NetworkManager.OnServerStarted += NetworkManager_OnServerStarted;
-        
     }
     public override void OnDestroy()
     {
-        base.OnDestroy();
+        base .OnDestroy();
+
         NetworkManager.OnServerStarted -= NetworkManager_OnServerStarted;
-        NetworkManager.Singleton.OnClientConnectedCallback -= Singleton_OnClientConnectedCallback;
+        NetworkManager.Singleton.OnClientConnectedCallback -= NetworkManager_OnClientConnectedCallback;
+    }
 
-
+    private void Start()
+    {
+        gameState = State.Menu;
     }
     private void NetworkManager_OnServerStarted()
     {
@@ -56,21 +56,17 @@ public class GameManager : NetworkBehaviour
         }
 
         connectedPlayers++;
-        NetworkManager.Singleton.OnClientConnectedCallback += Singleton_OnClientConnectedCallback;   
+        NetworkManager.Singleton.OnClientConnectedCallback += NetworkManager_OnClientConnectedCallback;
     }
-    private void Singleton_OnClientConnectedCallback(ulong obj)
-    {
-        connectedPlayers++;
 
-        if (connectedPlayers >=2)
+    private void NetworkManager_OnClientConnectedCallback(ulong obj)
+    {
+         connectedPlayers++;
+
+        if (connectedPlayers >= 2)
         {
             StartGame();
         }
-    }
-    void Start()
-    {
-        gameState = State.Menu;
-
     }
 
     private void StartGame()
@@ -84,6 +80,7 @@ public class GameManager : NetworkBehaviour
         gameState = State.Game;
         onGameStateChanged?.Invoke(gameState);
     }
+
     public void SetGameState(State state)
     {
         this.gameState = state;

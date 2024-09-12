@@ -1,34 +1,26 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
 using Unity.Netcode;
-using UnityEngine.SceneManagement;
 using Unity.Netcode.Transports.UTP;
+using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class UIManager : MonoBehaviour
 {
-    [Header("Panels")]
     [SerializeField] private GameObject connectionPanel;
     [SerializeField] private GameObject waitingPanel;
     [SerializeField] private GameObject gamePanel;
     [SerializeField] private GameObject winPanel;
     [SerializeField] private GameObject losePanel;
-
-
-    void Start()
+    private void Start()
     {
         ShowConnectionPanel();
-        GameManager.onGameStateChanged += GameStateChangedCallBack;
-    }
 
-    void Update()
-    {
-        
+        GameManager.onGameStateChanged += GameStateChangedCallBack;
     }
     private void OnDestroy()
     {
         GameManager.onGameStateChanged -= GameStateChangedCallBack;
     }
+
     private void GameStateChangedCallBack(GameManager.State state)
     {
         switch (state)
@@ -36,6 +28,7 @@ public class UIManager : MonoBehaviour
             case GameManager.State.Game:
                 ShowGamePanel();
                 break;
+
             case GameManager.State.Win:
                 ShowWinPanel();
                 break;
@@ -44,6 +37,7 @@ public class UIManager : MonoBehaviour
                 break;
         }
     }
+
     private void ShowConnectionPanel()
     {
         connectionPanel.SetActive(true);
@@ -52,56 +46,75 @@ public class UIManager : MonoBehaviour
 
         winPanel.SetActive(false);
         losePanel.SetActive(false);
-
     }
+
     private void ShowWaitingPanel()
     {
         connectionPanel.SetActive(false);
         waitingPanel.SetActive(true);
         gamePanel.SetActive(false);
+        winPanel.SetActive(false);
+        losePanel.SetActive(false);
     }
     private void ShowGamePanel()
     {
         connectionPanel.SetActive(false);
         waitingPanel.SetActive(false);
         gamePanel.SetActive(true);
+        winPanel.SetActive(false);
+        losePanel.SetActive(false);
     }
+
     private void ShowWinPanel()
     {
+        connectionPanel.SetActive(false);
+        waitingPanel.SetActive(false);
+        gamePanel.SetActive(false);
         winPanel.SetActive(true);
+        losePanel.SetActive(false);
     }
     private void ShowLosePanel()
     {
+        connectionPanel.SetActive(false);
+        waitingPanel.SetActive(false);
+        gamePanel.SetActive(false);
+        winPanel.SetActive(false);
         losePanel.SetActive(true);
     }
-    public void HostButtonCallBack()
+
+    public void HostBtnCallBacks()
     {
-        // NetworkManager.Singleton.StartHost();
+        //NetworkManager.Singleton.StartHost();
         ShowWaitingPanel();
 
-        RelayManager.Instance.StartCoroutine(RelayManager.Instance.ConfigureTransportAndStartNgoAsHost());
+        RelayManager.Instance.StartCoroutine(RelayManager.Instance.ConfigureTransportAndStartNgoHost());
     }
-    public void ClientButtonCallBack()
+
+    public void ClientBtnCallBacks()
     {
-        // string ipAdres = IPManager.instance.GetInputIP();
+        // string ipAdress = IPManager.instance.GetInputIP();
 
         // UnityTransport utp = NetworkManager.Singleton.GetComponent<UnityTransport>();
-        // utp.SetConnectionData(ipAdres, 7777);
+        // utp.SetConnectionData(ipAdress, 7777);
 
         // NetworkManager.Singleton.StartClient();
 
-        RelayManager.Instance.StartCoroutine(RelayManager.Instance.ConfigureTramsportAndStartNgoAsConnectingPlayer());
-        ShowWaitingPanel();  
+        RelayManager.Instance.StartCoroutine(RelayManager.Instance.ConfigureTransportAndStartNgoAsConnectingPlayer());
+
+        ShowWaitingPanel();
     }
-    public void NextButtonCallBack()
+
+    public void NextBtnCallBack()
     {
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+
         NetworkManager.Singleton.Shutdown();
     }
-    public void PlayButtonCallBack()
+
+    public void PlayBtnCallBack()
     {
         ShowWaitingPanel();
 
-        MatchMakingManager.Instance.PlayBtuttonCallBack();
+        MatchMakingManager.Instance.PlayBtnCallBack();
     }
 }

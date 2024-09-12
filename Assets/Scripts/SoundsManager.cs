@@ -4,21 +4,20 @@ using UnityEngine;
 
 public class SoundsManager : MonoBehaviour
 {
-    [Header("Sounds")]
-    [SerializeField] private AudioSource bumpSounce;
+    [SerializeField] private AudioSource bumpSound;
 
-    void Start()
+
+    private void Start()
     {
-        PlayerController.onBump += PlayBumpSound;
+        PlayerController.onBump += PlayBump;
     }
 
     private void OnDestroy()
     {
-        PlayerController.onBump -= PlayBumpSound;
-
+        PlayerController.onBump -= PlayBump;
     }
-    public void PlayBumpSound()
+    public void PlayBump()
     {
-        bumpSounce.Play();
+        bumpSound.Play();
     }
 }
